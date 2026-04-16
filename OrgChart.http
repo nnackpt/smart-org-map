@@ -1,0 +1,6 @@
+@OrgChart_HostAddress = http://localhost:5199
+
+GET {{OrgChart_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
