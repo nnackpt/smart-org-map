@@ -12,23 +12,32 @@ const isBrowser = typeof window !== "undefined"
 export const auth = {
     save(token: string, user: AuthUser) {
         if (!isBrowser) return
-        localStorage.setItem("token", token)
-        localStorage.setItem("user", JSON.stringify(user))
+        sessionStorage.setItem("token", token)
+        sessionStorage.setItem("user", JSON.stringify(user))
         document.cookie = `token=${token}; path=/; max-age=${60 * 60 * 8}`
     },
     getToken(): string | null {
         if (!isBrowser) return null
-        return localStorage.getItem("token")
+        const token = sessionStorage.getItem("token")
+        if (!token && document.cookie.includes("token=")) {
+            document.cookie = "token=; path=/; max-age=0"
+        }
+        return token
     },
     getUser(): AuthUser | null {
         if (!isBrowser) return null
-        const u = localStorage.getItem("user")
+        const token = sessionStorage.getItem("token")
+        if (!token) {
+            document.cookie = "token=; path=/; max-age=0"
+            return null
+        }
+        const u = sessionStorage.getItem("user")
         return u ? JSON.parse(u) : null
     },
     clear() {
         if (!isBrowser) return
-        localStorage.removeItem("token")
-        localStorage.removeItem("user")
+        sessionStorage.removeItem("token")
+        sessionStorage.removeItem("user")
         document.cookie = "token=; path=/; max-age=0"
     },
     isLoggedIn(): boolean {

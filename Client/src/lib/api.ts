@@ -5,6 +5,7 @@ export async function apiFetch(path: string, options?: RequestInit) {
     const { API_BASE_URL } = await getConfig()
     const token = auth.getToken()
     return fetch(`${API_BASE_URL}${path}`, {
+        method: "GET",
         ...options,
         headers: {
             "Content-Type": "application/json",

@@ -1,6 +1,8 @@
 "use client"
 
 import AccountTreeIcon from "@mui/icons-material/AccountTree"
+import ManageAccountsIcon from "@mui/icons-material/ManageAccounts"
+import EditIcon from "@mui/icons-material/Edit"
 import PersonAddIcon from "@mui/icons-material/PersonAdd"
 import LockResetIcon from "@mui/icons-material/LockReset"
 import DashboardIcon from "@mui/icons-material/Dashboard"
@@ -12,6 +14,8 @@ const navItems = (isPrivileged: boolean) => [
     { label: "Dashboard", icon: <DashboardIcon />, path: "/" },
     ...(isPrivileged ? [
         { label: "Add Employee", icon: <PersonAddIcon />, path: "/employees/new" },
+        { label: "Edit Employee", icon: <EditIcon />, path: "/employees/edit" },
+        { label: "Manage Managers", icon: <ManageAccountsIcon />, path: "/employees/managers" },
         { label: "Reset Password", icon: <LockResetIcon />, path: "/employees/reset-password" },
     ] : [])
 ]
