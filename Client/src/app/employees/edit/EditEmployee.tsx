@@ -48,6 +48,12 @@ export default function EditEmployee() {
     const [empError, setEmpError] = useState("")
     const [empSuccess, setEmpSuccess] = useState("")
 
+    // Manage Employee tab
+    const [empName, setEmpName] = useState("")
+    const [deleteLoading, setDeleteLoading] = useState(false)
+    const [deleteError, setDeleteError] = useState("")
+    const [confirmDelete, setConfirmDelete] = useState(false)
+
     // Department tab
     const [editDept, setEditDept] = useState<Department | null>(null)
     const [deptName, setDeptName] = useState("")
@@ -87,6 +93,7 @@ export default function EditEmployee() {
     const handleSelectEmp = (emp: Employee | null) => {
         setSelectEmp(emp)
         setPosition(emp?.position ?? "")
+        setEmpName(emp?.name ?? "")
         setSelectedDept(emp ? depts.find(d => d.id === emp.department.id) ?? null : null)
         setEmpError("")
         setEmpSuccess("")
@@ -195,10 +202,66 @@ export default function EditEmployee() {
         }
     }
 
+    const handleUpdateName = async () => {
+        if (!selectEmp || !empName.trim()) return
+        setEmpLoading(true)
+        setEmpError("")
+        setEmpSuccess("")
+        try {
+            const res = await apiFetch(`/api/Employees/${selectEmp.id}`, {
+                method: "PUT",
+                body: JSON.stringify({
+                    name: empName.trim(),
+                    position: selectEmp.position,
+                    departmentId: selectEmp.department,
+                    managerId: selectEmp.manager?.id ?? null
+                })
+            })
+            if (!res.ok) {
+                try {
+                    const err = await res.json()
+                    setEmpError(err.message ?? "Failed.")
+                } catch {
+                    setEmpError(`Error ${res.status}`)
+                }
+                return
+            }
+            setEmpSuccess("Name updated successfully.")
+            setEmployees(prev => prev.map(e => e.id === selectEmp.department.id ? { ...e, name: empName.trim() } : e))
+            setSelectEmp(prev => prev ?  { ...prev, name: empName.trim() } : null)
+        } finally {
+            setEmpLoading(false)
+        }
+    }
+
+    const handleDelete = async () => {
+        if (!selectEmp) return
+        setDeleteLoading(true)
+        setDeleteError("")
+        try {
+            const res = await apiFetch(`/api/Employees/${selectEmp.id}`, { method: "DELETE" })
+            if (!res.ok) {
+                try {
+                    const err = await res.json()
+                    setDeleteError(err.message ?? "Failed.")
+                } catch {
+                    setDeleteError(`Error ${res.status}`)
+                }
+                return
+            }
+            setEmployees(prev => prev.filter(e => e.id !== selectEmp.id))
+            setSelectEmp(null)
+            setConfirmDelete(false)
+            setEmpSuccess("Employee deleted successfully.")
+        } finally {
+            setDeleteLoading(false)
+        }
+    }
+
     return (
         <AppLayout user={user}>
             <Box sx={{ height: "100%", overflow: "auto", p: 4 }}>
-                <Box sx={{ maxWidth: tab === 0 ? 600 : "100%", mx: "auto" }}>
+                <Box sx={{ maxWidth: "100%", mx: "auto" }}>
                     {/* Header */}
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 4 }}>
                         <Box
@@ -236,10 +299,11 @@ export default function EditEmployee() {
                         }}
                     >
                         <Tab label="Employee Info" />
+                        <Tab label="Manage Employees" />
                         <Tab label="Departments" /> 
                     </Tabs>
 
-                    {/* Tab 0 - Employee */}
+                    {/* Tab 0 - Employee Info */}
                     {tab === 0 && (
                         <Box
                             sx={{
@@ -286,7 +350,7 @@ export default function EditEmployee() {
                                             </Box>
                                         </Box>
                                     )}
-                                    renderInput={params => <TextField {...params} label="Seach employee" sx={inputSx} />}
+                                    renderInput={params => <TextField {...params} label="Search employee" sx={inputSx} />}
                                 />
                             </Box>
 
@@ -352,8 +416,165 @@ export default function EditEmployee() {
                         </Box>
                     )}
 
-                    {/* Tab 1 - Departments */}
+                    {/* Tab 1 - Manage Employee */}
                     {tab === 1 && (
+                        <Box
+                            sx={{
+                                bgcolor: "#fff",
+                                borderRadius: 3,
+                                border: "1px solid #e0e7f0",
+                                p: 4,
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 3
+                            }}
+                        >
+                            <Box>
+                                <Typography variant="body2" sx={{ fontWeight: 700, color: "#0d1b2e", mb: 1.5 }}>
+                                    1. Select Employee
+                                </Typography>
+                                <Autocomplete
+                                    options={employees}
+                                    getOptionLabel={e => e.name}
+                                    value={selectEmp}
+                                    onChange={(_, v) => handleSelectEmp(v)}
+                                    renderOption={({ key, ...props }, e) => (
+                                        <Box
+                                            key={key}
+                                            component="li"
+                                            {...props}
+                                            sx={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: 1.5,
+                                                py: 1
+                                            }}
+                                        >
+                                            <Avatar
+                                                sx={{
+                                                    width: 32,
+                                                    height: 32,
+                                                    bgcolor: "#164799",
+                                                    fontSize: 12,
+                                                    fontWeight: 600
+                                                }}
+                                            >
+                                                {initails(e.name)}
+                                            </Avatar>
+                                            <Box>
+                                                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                                    {e.name}
+                                                </Typography>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    {e.position} · {e.department.name}
+                                                </Typography>
+                                            </Box>
+                                        </Box>
+                                    )}
+                                    renderInput={params => <TextField {...params} label="Search employee" sx={inputSx} />}
+                                />
+                            </Box>
+
+                            {selectEmp && (
+                                <>
+                                    <Divider />
+
+                                    {/* Edit Name */}
+                                    <Box>
+                                        <Typography variant="body2" sx={{ fontWeight: 700, color: "#0d1b2e", mb: 1.5 }}>
+                                            2. Edit Name
+                                        </Typography>
+                                        <Box sx={{ display: "flex", gap: 1 }}>
+                                            <TextField
+                                                fullWidth
+                                                label="Full Name"
+                                                value={empName}
+                                                onChange={e => setEmpName(e.target.value)}
+                                                sx={inputSx}
+                                            />
+                                            <Button
+                                                variant="contained"
+                                                startIcon={<SaveIcon />}
+                                                onClick={handleUpdateName}
+                                                disabled={empLoading || !empName.trim() || empName === selectEmp.name}
+                                                sx={{
+                                                    bgcolor: "#164799",
+                                                    borderRadius: 2,
+                                                    textTransform: "none",
+                                                    fontWeight: 600,
+                                                    minWidth: 90,
+                                                    "&:hover": { bgcolor: "#0d2d66" }
+                                                }}
+                                            >
+                                                {empLoading ? <CircularProgress size={16} sx={{ color: "#fff"}} /> : "Save"}
+                                            </Button>
+                                        </Box>
+                                    </Box>
+
+                                    <Divider />
+
+                                    {/* Delete */}
+                                    <Box>
+                                        <Typography variant="body2" sx={{ fontWeight: 700, color: "#d32f2f", mb: 1.5 }}>
+                                            3. Delete Employee
+                                        </Typography>
+                                        {!confirmDelete ? (
+                                            <Button
+                                                variant="outlined"
+                                                startIcon={<DeleteIcon />}
+                                                onClick={() => setConfirmDelete(true)}
+                                                sx={{
+                                                    borderColor: "#d32f2f",
+                                                    color: "#d32f2f",
+                                                    borderRadius: 2,
+                                                    textTransform: "none",
+                                                    fontWeight: 600,
+                                                    "&:hover": { bgcolor: "#fff5f5" }
+                                                }}
+                                            >
+                                                Delete {selectEmp.name}
+                                            </Button>
+                                        ) : (
+                                                <Box sx={{ bgcolor: "#fff5f5", borderRadius: 2, p: 2, border: "1px solid #fecaca" }}>
+                                                    <Typography variant="body2" color="#d32f2f" sx={{ fontWeight: 600, mb: 2 }}>
+                                                        Are you sure you want to delete <strong>{selectEmp.name}</strong>? This cannot be undone.
+                                                    </Typography>
+                                                    <Box sx={{ display: "flex", gap: 1 }}>
+                                                        <Button
+                                                            variant="contained"
+                                                            onClick={handleDelete}
+                                                            disabled={deleteLoading}
+                                                            sx={{
+                                                                bgcolor: "#d32f2f",
+                                                                borderRadius: 2,
+                                                                textTransform: "none",
+                                                                fontWeight: 600,
+                                                                "&:hover": { bgcolor: "#b71c1c" },
+                                                            }}
+                                                        >
+                                                            {deleteLoading ? <CircularProgress size={16} sx={{ color: "#fff" }} /> : "Confirm Delete"}
+                                                        </Button>
+                                                        <Button
+                                                            onClick={() => setConfirmDelete(false)}
+                                                            sx={{
+                                                                color: "text.secondary",
+                                                                textTransform: "none"
+                                                            }}
+                                                        >
+                                                            Cancel
+                                                        </Button>
+                                                    </Box>
+                                                </Box>
+                                        )}
+                                        {deleteError && <Alert severity="error" sx={{ mt: 2, borderRadius: 2 }}>{deleteError}</Alert>}
+                                    </Box>
+                                </>
+                            )}
+                        </Box>
+                    )}
+
+                    {/* Tab 2 - Departments */}
+                    {tab === 2 && (
                         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                             {/* Create new */}
                             <Box sx={{ bgcolor: "#fff", borderRadius: 3, border: "1px solid #e0e7f0", p: 4 }}>
