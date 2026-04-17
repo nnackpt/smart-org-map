@@ -9,7 +9,8 @@ import { useState, useEffect, startTransition } from 'react';
 import { auth } from "@/lib/auth"
 import { apiFetch } from "@/lib/api"
 import AppLayout from "@/Components/AppLayout"
-import { Alert, Autocomplete, Avatar, Box, Button, CircularProgress, Divider, IconButton, Tab, Tabs, TextField, Typography } from "@mui/material"
+import { Alert, Autocomplete, Avatar, Box, Button, CircularProgress, Divider, IconButton, Snackbar, Tab, Tabs, TextField, Typography } from "@mui/material"
+import Toast from "@/Components/UI/Toast"
 
 interface Employee {
     id: number
@@ -197,7 +198,7 @@ export default function EditEmployee() {
     return (
         <AppLayout user={user}>
             <Box sx={{ height: "100%", overflow: "auto", p: 4 }}>
-                <Box sx={{ maxWidth: 600, mx: "auto" }}>
+                <Box sx={{ maxWidth: tab === 0 ? 600 : "100%", mx: "auto" }}>
                     {/* Header */}
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 4 }}>
                         <Box
@@ -314,8 +315,22 @@ export default function EditEmployee() {
                                         </Box>
                                     </Box>
 
-                                    {empError && <Alert severity="error" sx={{ borderRadius: 2 }}>{empError}</Alert>}
-                                    {empSuccess && <Alert severity="success" sx={{ borderRadius: 2 }} icon={<CheckCircleIcon />}>{empSuccess}</Alert>}
+                                    {empError && (
+                                        <Toast
+                                            open={!!empError}
+                                            onClose={() => setEmpError("")}
+                                            message={empError}
+                                            type="error"
+                                        />
+                                    )}
+                                    {empSuccess && (
+                                        <Toast
+                                            open={!!empSuccess}
+                                            onClose={() => setEmpSuccess("")}
+                                            message={empSuccess}
+                                            type="success"
+                                        />
+                                    )}
 
                                     <Button
                                         variant="contained"
@@ -341,13 +356,12 @@ export default function EditEmployee() {
                     {tab === 1 && (
                         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                             {/* Create new */}
-                            <Box sx={{ bgcolor: "#fff", borderRadius: 3, border: "1px solid #e0e7f0" }}>
-                                <Typography variant="body2" sx={{ fontWeight: 700, color: "#0d1b2e", mb: 1.5 }}>
+                            <Box sx={{ bgcolor: "#fff", borderRadius: 3, border: "1px solid #e0e7f0", p: 4 }}>
+                                <Typography variant="body2" sx={{ fontWeight: 700, color: "#0d1b2e", mb: 2 }}>
                                     Create New Department
                                 </Typography>
-                                <Box sx={{ display: "flex", gap: 1 }}>
+                                <Box sx={{ display: "flex", gap: 2, flexDirection: "column" }}>
                                     <TextField
-                                        size="small"
                                         label="Department Name"
                                         fullWidth
                                         value={newDeptName}
@@ -367,7 +381,7 @@ export default function EditEmployee() {
                                             borderRadius: 2,
                                             textTransform: "none",
                                             fontWeight: 600,
-                                            minWidth: 80,
+                                            py: 1.2,
                                             "&:hover": { bgcolor: "#0d2d66" }
                                         }}
                                     >
@@ -460,8 +474,22 @@ export default function EditEmployee() {
                                     </Box>
                                 )}
 
-                                {deptError && <Alert severity="error" sx={{ borderRadius: 2, mt: 2 }}>{deptError}</Alert>}
-                                {deptSuccess && <Alert severity="success" icon={<CheckCircleIcon />} sx={{ borderRadius: 2, mt: 2 }}>{deptSuccess}</Alert>}
+                                {deptError && (
+                                    <Toast
+                                        open={!!deptError}
+                                        onClose={() => setDeptError("")}
+                                        message={deptError}
+                                        type="error"
+                                    />
+                                )}
+                                {deptSuccess && (
+                                    <Toast
+                                        open={!!deptSuccess}
+                                        onClose={() => setDeptSuccess("")}
+                                        message={deptSuccess}
+                                        type="success"
+                                    />
+                                )}
                             </Box>
                         </Box>
                     )}
